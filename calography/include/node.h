@@ -10,8 +10,12 @@
 // ----- includes ------
 #include <ostream>
 #include <istream>
+#include <vector>
+
+#include "relvec.h"
 
 namespace cg {
+
 
 /**
 * @brief Abstract node class
@@ -23,12 +27,28 @@ public:
   /**
   * @brief default constructor
   */
-  node() { }
+  node():id_(nNodes_++) { }
+
+  /**
+  * @brief construct with data.
+  * @param[in] E energy of the node
+  * @param[in] pos the position of the node.
+  */
+  node(double E, const relvec& rc)
+    :id_(nNodes_++)
+    ,energy_(E)
+    ,pos_(rc)
+  { }
 
   /**
   * @brief copy constructor
   */
-  node(const node& nd) { }
+  node(const node& nd)
+    :id_(nd.id_)
+    ,energy_(nd.energy_)
+    ,pos_(nd.pos_) 
+    ,children_(nd.children_)
+  { }
 
   /**
   * @brief destructor
@@ -38,13 +58,16 @@ public:
   /**
   * @brief Add child node.
   */
+  virtual void add_child(node & nd) {
+    children_.push_back(nd);
+  }
 
   // --- serialization methods ---
   /**
   * @brief serialize
   * @param[in] stream The output stream into which to write this node.
   */
-  virtual void serialize(std::ostream & stream);
+  virtual void serialize(std::ostream & stream) const;
 
   /**
   * @brief deserialize
@@ -56,13 +79,19 @@ public:
   * @brief insertion operator
   * This method can be used to insert the sub-graph below this node into a stream.
   */
-  friend std::ostream& operator<<(std::ostream&, node &);
+  inline friend std::ostream& operator<<(std::ostream& stream, const node & nd) {
+    nd.serialize(stream);
+    return stream;
+  }
 
   /**
   * @brief extraction operator
   * @details This method can be used to extract the sub-graph below this node from a stream.
   */
-  friend std::istream& operator>>(std::istream&, node &); 
+  inline friend std::istream& operator>>(std::istream& stream, node & nd) {
+    nd.deserialize(stream);
+    return stream;
+  }
 
 
   // ---  accessor methods ---
@@ -73,6 +102,22 @@ public:
   * @param[in] lvl The depth in the graph of this node. 
   */
   virtual void print(int lvl=0 ) const;
+
+
+  /**
+  * @brief Get the id of this node.
+  */
+  virtual unsigned id() const { return id_; }
+
+  /**
+  * @brief Get the position of this node.
+  */
+  virtual const relvec & pos() const { return pos_; }
+
+  /**
+  * @brief Get the energy.
+  */
+  virtual float energy() const { return energy_; }
 
 
   // --- analysis methods ---
@@ -90,7 +135,7 @@ public:
   * @brief Sum the deposited energy in this sub-graph.
   * @return The sum of the (readable) energy from the sub-graph.
   */
-  virtual double totalenergy();
+  virtual double totalenergy() const;
 
   /**
   * @brief Get steps (tracks) that deposit energy for further analysis
@@ -100,12 +145,53 @@ public:
   virtual std::vector<const node*> shower() const; 
 
 
+  /**
+  * @brief look up a specific node.
+  * @param[in] id The node id.
+  * @return A pointer to the node (NULL if the node is not found).
+  */
+  virtual node * find(const unsigned id);
+
+
+  // --- setter methods ---
+  /**
+  * @brief Set the position of the node.
+  * @param[in] pos The new position (4-space) of the node.
+  */
+  virtual void set_pos(const relvec &);
+
+  /**
+  * @brief Set the energy of the node.
+  * @param[in] E The new energy of the node.
+  */
+  virtual void set_energy(const float E);
+
 protected:
 
+  // node id
+  unsigned id_;
+
+  // energy
+  float energy_;
+
+  // location
+  relvec pos_;
+
+  // children of this node
+  std::vector<node> children_;
+
 private:
+
+  /// 
+  /// node count, use this to increment each time
+  /// a new node is created.  This will ensure
+  /// each node has a unique id.
+  static unsigned nNodes_;
 
 }; 
 
 }
+
+
 
 #endif

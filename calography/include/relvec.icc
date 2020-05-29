@@ -1,0 +1,34 @@
+
+
+// serialize
+void relvec::serialize(std::ostream& stream) const {
+  stream << t_ << " " << x_ << " " << y_ << " " << z_ << " ";
+}
+
+// deserialize
+void relvec::deserialize(std::istream& stream) {
+  stream >> t_ >> x_ >> y_ >> z_;
+}
+
+
+// equality
+bool relvec::operator==(const relvec & vec) {
+  return t_ == vec.t_ && x_ == vec.x_ && y_ == vec.y_ && z_ == vec.z_;
+}
+
+// dot product
+double relvec::operator*(const relvec & vec) {
+  return -t_*vec.t_ + x_*vec.x_ + y_*vec.y_ + z_*vec.z_;
+}
+
+// addition
+relvec relvec::operator+(const relvec & vec) {
+  return relvec(t_-vec.t_,x_+vec.x_,y_+vec.y_,z_+vec.z_);
+}
+
+// subtraction
+relvec relvec::operator-(const relvec & vec) {
+  return relvec(t_-vec.t_,x_-vec.x_,y_-vec.y_,z_-vec.z_);
+}
+
+

@@ -12,8 +12,6 @@
 
 #include <string>
 
-// #include "G4ProcessType.hh"
-
 namespace cg {
 
 /**
@@ -37,6 +35,7 @@ public:
   */
   process(const process & proc)
     :node(proc)
+    ,procName_(proc.procName_)
   { }
 
   /**
@@ -47,10 +46,6 @@ public:
     ,procName_(name)
   { }
   
-
-  /**
-  * @brief destructor
-  */
 
 
   /** 

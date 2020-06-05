@@ -4,12 +4,7 @@
 #include <cassert>
 #include <iostream>
 
-// COCHISE
-// need these for now to deserialize the graph.
-// remove if a separate factory is implemented.
-#include "process.h"
-#include "track.h"
-
+#include "CaloGraphyIO.h"
 
 
 // instantiate the static node count
@@ -51,30 +46,7 @@ void cg::node::deserialize_children(std::istream & stream) {
   stream >> num;
   for ( unsigned i=0; i != num; i++ ) {
 
-    // peek ahead to determine the type of the next node
-    unsigned stream_pos = stream.tellg();    
-    unsigned id;
-    unsigned tmptype;
-    stream >> id >> tmptype;
-    node_type type = static_cast<node_type>(tmptype); 
-
-    // go back to deserialize
-    stream.seekg(stream_pos);
-
-    cg::node * nd;
-  
-    if ( type ==  cg::genericNode ) {
-      nd = new cg::node;
-      nd->deserialize(stream);
-    } else if ( type == cg::processNode ) {
-      nd = new cg::process;
-      nd->deserialize(stream);
-    } else if ( type == cg::trackNode ) {
-      nd = new cg::track;
-      nd->deserialize(stream);
-    } else {
-      assert(false);
-    }
+    node * nd = extract_node(stream);
 
     children_.push_back(nd);
   }

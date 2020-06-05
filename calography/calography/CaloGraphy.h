@@ -15,6 +15,8 @@
 #include "node.h"
 #include "track.h"
 #include "process.h"
+#include "nodetypes.h"
+#include "CaloGraphyIO.h"
 
 
 #endif

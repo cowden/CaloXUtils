@@ -1,13 +1,7 @@
 
 
-CXX := g++
-DEPFLAGS := -MD -MP
-
-
-.PHONY: clean all
+.PHONY all clean 
 
 all:
 
-
 clean:
-

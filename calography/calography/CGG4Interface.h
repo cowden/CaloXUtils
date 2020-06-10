@@ -13,6 +13,8 @@
 
 #include "CaloGraphy.h"
 
+#include "G4Types.hh"
+#include "G4String.hh"
 
 // forward declare Geant4 classes
 class G4Step;
@@ -80,7 +82,7 @@ public:
   /**
   * @brief get base name
   */
-  virtual const G4string & get_base_name() const { return base_name_; }
+  virtual const G4String & get_base_name() const { return base_name_; }
 
   /**
   * @brief get the number of events/graphs
@@ -97,7 +99,7 @@ public:
   * @brief get the shower graph of a particular event.
   * @param\[in] i the event number 
   */
-  virtual node * node(const unsigned i);
+  virtual node * get_node(const unsigned i);
 
 
   // --- setters ---
@@ -115,7 +117,7 @@ private:
   node_collection local_data_;
 
   // output file base name
-  std::string base_name_;
+  G4String base_name_;
 
   // ----------------------------------
   // static master collection

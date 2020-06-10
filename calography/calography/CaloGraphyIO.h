@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <cassert>
 
 #include "node.h"
 #include "process.h"

@@ -115,6 +115,9 @@ private:
   // --------------------------------
   // thread local storage
   node_collection local_data_;
+  node * current_event_root_;
+
+  std::stack<node *> stack_;
 
   // output file base name
   G4String base_name_;

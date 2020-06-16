@@ -47,16 +47,83 @@ void cg::CGG4Interface::merge()
 }
 
 
+
+
 // process a step
 void cg::CGG4Interface::process_step(G4Step * step)
 { 
 
+  //  get the track information
+  auto track = step->GetTrack();
+  auto id = track->GetTrackID();
+  auto eDep = step->GetTotalEnergyDeposit();
+       
+  // find the track in the graph
+  // keep a stack of tracks as well to quickly look this up
+  cg::track * theNode = stack_.pop();
+
+  // check the track id
+  assert(theNode->G4TrackID() == id);
+
+  // update the energy lost in the step
+  theNode->set_energy(eDep);
+  
+
+  // get the end process of the step
+  auto post = step->GetPostStepPoint();
+  auto proc = post->GetProcessDefinedStep();
+  auto procname = proc->GetProcessName();
+
+  auto t = post->GetGlobalTime();
+  auto pos3 = post->GetPosition();
+  cg::relvec pos(t,pos3.x(),pos3.y(),pos3.z());
+
+  //  attach the process
+  cg::process * procNode = new cg::process(procname,0.,pos);
+  theNode->add_child(procNode); 
+  
+
+  // process secondaries
+  auto secondaries = step->GetSecondariesInCurrentStep();
+  auto nsec = secondaries->size();
+  for ( unsigned i=0; i != nsec; i++ ){
+    // get secondary information
+    auto sectrk = (*secondaries)[i];
+    auto secid = id + i;
+    auto sectrk->GetParticleDefinition()->GetPDGEncoding();
+
+    // create secondary track nodes
+    // put track node on stack
+    // 
+
+    cg::track * subNode = new cg::track;
+    procNode->add_child(subNode); 
+
+    // get the particle energy/momentum
+    //
+
+  }
+
 }
+
+
 
 
 // start a new event
 void cg::CGG4Interface::start_event()
-{ }
+{ 
+  // 
+  cg::node *nd = new cg::node;
+  local_data_.push_back(nd);
+
+  current_event_root_ = nd;
+
+  // clear the stack
+  stack_ = std::stack<node *>(); 
+  stack_.push(nd);
+}
+
+
 
 // get the size of the collection
 size_t cg::CGG4Interface::size() const
@@ -74,6 +141,8 @@ size_t cg::CGG4Interface::size() const
   }
 
 }
+
+
 
 
 // get the collection

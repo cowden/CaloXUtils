@@ -39,15 +39,17 @@ public:
     :node(trk)
     ,pdgid_(trk.pdgid_)
     ,g4trackid_(trk.g4trackid_)
+    ,momentum_(trk.momentum_)
   { }
 
   /**
   * @brief construct with some data.
   */
-  track(int pdg, unsigned g4trackid, double E, const relvec& rc)
+  track(int pdg, unsigned g4trackid, const relvec &mom, double E, const relvec& rc)
     :node(trackNode,E,rc)
     ,pdgid_(pdg)
     ,g4trackid_(g4trackid)
+    ,momentum_(mom)
   { }
 
 
@@ -77,6 +79,11 @@ public:
   */
   virtual void set_g4trackid(unsigned id) { g4trackid_ = id; }
 
+  /**
+  * @brief set the 4-momentum of the track.
+  */
+  virtual void set_momentum(const relvec & mom) { momentum_ = mom; }
+
   // --- new getters ---
   /**
   * @brief get the PDG particle id code.
@@ -88,6 +95,11 @@ public:
   */
   virtual unsigned G4TrackID() const { return g4trackid_; }
 
+  /**
+  * @brief get the 4-momentum of the particle
+  */
+  virtual const relvec & momentum() const { return momentum_; }
+
 
 protected:
 
@@ -96,6 +108,9 @@ protected:
 
   // identify a G4 track
   unsigned g4trackid_;
+
+  // particle momentum
+  relvec momentum_;
 
   
 };

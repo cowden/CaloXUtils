@@ -58,15 +58,6 @@ void cg::CGG4Interface::process_step(G4Step * step)
   auto id = track->GetTrackID();
   auto eDep = step->GetTotalEnergyDeposit();
        
-  // find the track in the graph
-  // keep a stack of tracks as well to quickly look this up
-  cg::track * theNode = stack_.pop();
-
-  // check the track id
-  assert(theNode->G4TrackID() == id);
-
-  // update the energy lost in the step
-  theNode->set_energy(eDep);
   
 
   // get the end process of the step
@@ -77,6 +68,34 @@ void cg::CGG4Interface::process_step(G4Step * step)
   auto t = post->GetGlobalTime();
   auto pos3 = post->GetPosition();
   cg::relvec pos(t,pos3.x(),pos3.y(),pos3.z());
+
+
+  // find the track in the graph
+  // keep a stack of tracks as well to quickly look this up
+  // if this is the first step in the event, start the root node.
+  cg::track * theNode;
+  if ( stack_.empty() && id == 1) {
+    const size_t nevents = local_data_.size();
+    auto pdgid = track->GetParticleDefinition()->GetPDGEncoding();
+    auto pret = step->GetPreStepPoint();
+    auto Etot = pret->GetTotalEnergy();
+    auto mom = pret->GetMomentum();
+
+    cg::relvec mom4(Etot,mom.x(),mom.y(),mom.z());
+ 
+    theNode = new cg::track(pdgid,id,mom4,eDep,pos);
+
+    local_data_[nevents-1] = theNode;
+  } else {
+    theNode = stack_.pop();
+  }
+
+  // check the track id
+  assert(theNode->G4TrackID() == id);
+
+  // update the energy lost in the step
+  theNode->set_energy(eDep);
+
 
   //  attach the process
   cg::process * procNode = new cg::process(procname,0.,pos);
@@ -90,17 +109,17 @@ void cg::CGG4Interface::process_step(G4Step * step)
     // get secondary information
     auto sectrk = (*secondaries)[i];
     auto secid = id + i;
-    auto sectrk->GetParticleDefinition()->GetPDGEncoding();
+    auto secpdg = sectrk->GetParticleDefinition()->GetPDGEncoding();
+
+    auto secpart = sectrk->GetDynamicParticle();
+    auto secmom = secpart->GetMomentum();
+    cg::relvec mom(secmom.t(),secmom.x(),secmom.y(),secmom.z());
 
     // create secondary track nodes
     // put track node on stack
-    // 
-
-    cg::track * subNode = new cg::track;
+    cg::track * subNode = new cg::track(secpdg,secid,secmom,0.,pos);
     procNode->add_child(subNode); 
-
-    // get the particle energy/momentum
-    //
+    stack_.push(subNode);
 
   }
 
@@ -116,11 +135,8 @@ void cg::CGG4Interface::start_event()
   cg::node *nd = new cg::node;
   local_data_.push_back(nd);
 
-  current_event_root_ = nd;
-
   // clear the stack
-  stack_ = std::stack<node *>(); 
-  stack_.push(nd);
+  stack_ = std::stack<cg::track *>(); 
 }
 
 

@@ -7,7 +7,8 @@
 #include "G4Step.hh"
 #include "G4Event.hh"
 #include "G4Threading.hh"
-
+#include "G4Track.hh"
+#include "G4VProcess.hh"
 
 
 namespace { G4Mutex cgMutex = G4MUTEX_INITIALIZER; }
@@ -87,7 +88,8 @@ void cg::CGG4Interface::process_step(G4Step * step)
 
     local_data_[nevents-1] = theNode;
   } else {
-    theNode = stack_.pop();
+    theNode = stack_.top();
+    stack_.pop();
   }
 
   // check the track id
@@ -103,7 +105,7 @@ void cg::CGG4Interface::process_step(G4Step * step)
   
 
   // process secondaries
-  auto secondaries = step->GetSecondariesInCurrentStep();
+  auto secondaries = step->GetSecondaryInCurrentStep();
   auto nsec = secondaries->size();
   for ( unsigned i=0; i != nsec; i++ ){
     // get secondary information
@@ -113,11 +115,12 @@ void cg::CGG4Interface::process_step(G4Step * step)
 
     auto secpart = sectrk->GetDynamicParticle();
     auto secmom = secpart->GetMomentum();
-    cg::relvec mom(secmom.t(),secmom.x(),secmom.y(),secmom.z());
+    auto secE = secpart->GetTotalEnergy();
+    cg::relvec mom(secE,secmom.x(),secmom.y(),secmom.z());
 
     // create secondary track nodes
     // put track node on stack
-    cg::track * subNode = new cg::track(secpdg,secid,secmom,0.,pos);
+    cg::track * subNode = new cg::track(secpdg,secid,mom,0.,pos);
     procNode->add_child(subNode); 
     stack_.push(subNode);
 

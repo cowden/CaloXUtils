@@ -9,6 +9,7 @@
 
 // ---- includes -----
 #include <vector>
+#include <stack>
 #include <string>
 
 #include "CaloGraphy.h"

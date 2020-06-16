@@ -13,6 +13,7 @@
 #include <string>
 #include <fstream>
 #include <cassert>
+#include <iostream>
 
 #include "node.h"
 #include "process.h"
@@ -76,6 +77,9 @@ inline node * extract_node(std::istream & stream) {
   stream >> id >> tmptype;
   node_type type = static_cast<node_type>(tmptype);
 
+  if ( stream.eof() ) 
+    return NULL;
+
   // step back in stream
   stream.seekg(pos);
 
@@ -110,8 +114,10 @@ inline node_collection ReadCollection(const std::string & name ) {
   node_collection nc;
 
   // keep reading graphs until we reach the end of the file
-  while ( !in.eof() && in.good() ) {
+  while ( !in.eof() && in.good() && in.peek() != EOF ) {
     node * nd = extract_node(in);
+    if ( !nd ) 
+      break;
     nc.push_back(nd);
   }
 

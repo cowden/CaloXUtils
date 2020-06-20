@@ -140,6 +140,11 @@ public:
   */
   virtual float energy() const { return energy_; }
 
+  /**
+  * @brief Get the children of this node.
+  */
+  const std::vector<node*> & children() const { return children_; }
+
 
   // --- analysis methods ---
 

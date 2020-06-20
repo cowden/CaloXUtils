@@ -68,7 +68,7 @@ public:
   * @brief process a step
   * @param[in] step The G4Step to process and update the event graph
   */
-  virtual void process_step(G4Step * step);
+  virtual void process_step(const G4Step * step);
 
 
   // --- event level actions ---
@@ -117,6 +117,7 @@ private:
   // thread local storage
   node_collection local_data_;
   std::stack<cg::track *> stack_;
+  unsigned trck_cnt_;
 
   // output file base name
   G4String base_name_;

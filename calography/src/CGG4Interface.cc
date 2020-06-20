@@ -1,5 +1,6 @@
 
 #include "CGG4Interface.h"
+#include "CaloGraphyIO.h"
 
 #include <sstream>
 
@@ -51,15 +52,14 @@ void cg::CGG4Interface::merge()
 
 
 // process a step
-void cg::CGG4Interface::process_step(G4Step * step)
+void cg::CGG4Interface::process_step(const G4Step * step)
 { 
 
   //  get the track information
   auto track = step->GetTrack();
   auto id = track->GetTrackID();
   auto eDep = step->GetTotalEnergyDeposit();
-       
-  
+        
 
   // get the end process of the step
   auto post = step->GetPostStepPoint();
@@ -83,8 +83,16 @@ void cg::CGG4Interface::process_step(G4Step * step)
     auto mom = pret->GetMomentum();
 
     cg::relvec mom4(Etot,mom.x(),mom.y(),mom.z());
- 
-    theNode = new cg::track(pdgid,id,mom4,eDep,pos);
+
+    auto tpre = pret->GetGlobalTime();
+    auto prepos3 = pret->GetPosition();
+    cg::relvec prepos(tpre,prepos3.x(),prepos3.y(),prepos3.z());
+
+    // instantiate the root node 
+    theNode = new cg::track(pdgid,id,mom4,eDep,prepos);
+
+    // increment the track count
+    trck_cnt_++;
 
     local_data_[nevents-1] = theNode;
   } else {
@@ -110,7 +118,7 @@ void cg::CGG4Interface::process_step(G4Step * step)
   for ( unsigned i=0; i != nsec; i++ ){
     // get secondary information
     auto sectrk = (*secondaries)[i];
-    auto secid = id + i;
+    auto secid = ++trck_cnt_;
     auto secpdg = sectrk->GetParticleDefinition()->GetPDGEncoding();
 
     auto secpart = sectrk->GetDynamicParticle();
@@ -124,6 +132,21 @@ void cg::CGG4Interface::process_step(G4Step * step)
     procNode->add_child(subNode); 
     stack_.push(subNode);
 
+  }
+
+  // if track status is alive, add track out of process and put on top of stack
+  if ( track->GetTrackStatus() == fAlive || track->GetTrackStatus() == fStopButAlive ) {
+    // get info
+    auto pdgid = track->GetParticleDefinition()->GetPDGEncoding();
+
+    auto etot = post->GetTotalEnergy();
+    auto mom3 = post->GetMomentum();
+    cg::relvec mom(etot,mom3.x(),mom3.y(),mom3.z());
+    
+    cg::track * nxtstep = new cg::track(pdgid,id,mom,0.,pos); 
+    procNode->add_child(nxtstep);
+
+    stack_.push(nxtstep);
   }
 
 }
@@ -140,6 +163,7 @@ void cg::CGG4Interface::start_event()
 
   // clear the stack
   stack_ = std::stack<cg::track *>(); 
+  trck_cnt_ = 0U;
 }
 
 

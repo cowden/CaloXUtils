@@ -110,7 +110,7 @@ def draw_noise(copula_assembly, alpha, beta, scale):
     An array of 1 draw of noise for the detector module.
     """
     noise = stats.beta.ppf(copula_assembly.flatten(), a=alpha, b=beta).reshape(copula_assembly.shape)
-    noise = scale * (noise - 0.5)
+    noise = scale * (noise - np.mean(noise))
     
     return np.expand_dims(noise, len(noise.shape))
 
@@ -130,7 +130,7 @@ def get_batch_to_score(X, batch, batch_size):
     """
     return X[batch*batch_size:(batch+1)*batch_size]
 
-def score_batch(data_dict, model, X, y, batch, batch_size, assembly_calibs, alpha, beta, noise_scale):
+def score_batch(data_dict, model, X, y, batch, batch_size, calib_copula, alpha, beta, noise_scale):
     """
     Score a batch of data.
 
@@ -142,7 +142,7 @@ def score_batch(data_dict, model, X, y, batch, batch_size, assembly_calibs, alph
     y (array) - target
     batch (int) - the batch number
     batch_size (int) - batch size
-    assembly_calibs (array) - calibration copula assembly
+    calib_copula (array) - copula draws
     alpha (float) - beta distribution parameter
     beta (float) - beta distribution parameter
     noise_scale (float) - scale of noise distribution
@@ -150,6 +150,7 @@ def score_batch(data_dict, model, X, y, batch, batch_size, assembly_calibs, alph
     # draw noise
     noise = np.zeros((batch_size,*X.shape[1:]))
     for i in range(batch_size):
+        assembly_calibs = select_random_panel_set(calib_copula, X.shape[1:-1])
         noise[i] = draw_noise(assembly_calibs, alpha, beta, noise_scale)
     
 
@@ -159,8 +160,10 @@ def score_batch(data_dict, model, X, y, batch, batch_size, assembly_calibs, alph
     X_uncalib_batch = np.zeros(X_batch.shape)
     for i in range(batch_size):
         X_uncalib_batch[i] = X_batch[i] * uncalib_consts + noise[i]
-        #X_ncalib_batch[i] = X_batch[i]
-    X_uncalib_batch[np.nonzero(X_uncalib_batch < 0.6)] = 0.
+        #X_uncalib_batch[i] = noise[i]
+
+    # apply zero suppression
+    #X_uncalib_batch[np.nonzero(X_uncalib_batch < 0.6)] = 0.
 
     Esum_uncalib_batch = X_uncalib_batch.sum(axis=(1,2,3)).ravel()
 
@@ -270,7 +273,7 @@ if __name__ == '__main__':
 
 
     for l in range (int(len(y)/batch_size)):
-        score_batch(data_dict, model, X, y, l, batch_size, assembly_calibs, alpha, beta, noise_scale)
+        score_batch(data_dict, model, X, y, l, batch_size, calib_copula, alpha, beta, noise_scale)
 
 
     df = pd.DataFrame(data_dict)

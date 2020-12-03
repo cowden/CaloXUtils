@@ -15,9 +15,10 @@ import getopt
 np.random.seed(42)
 
 # set the beta distribution parameters
-alpha = 10
-beta = 10
-noise_scale = 10.
+alpha = 2
+beta = 2
+calib_scale = 0.3
+noise_scale = 1.
 
 #
 # select a random set of panels to cover the detector module
@@ -73,7 +74,7 @@ def select_random_panel_set(calib_copula, detector_shape):
     return assembly
 
 
-def draw_uncalibration(copula_assembly, alpha, beta):
+def draw_uncalibration(copula_assembly, alpha, beta, scale):
     """
     Draw a random uncalibration factor sample.
 
@@ -83,13 +84,15 @@ def draw_uncalibration(copula_assembly, alpha, beta):
                               (the output of select_random_panel_set).
     alpha (float) - parameter of beta distribution
     beta (float) - parameter of beta distribution
+    scale (float) - resolution of the calibration (i.e. all elements are with \pm scale
+        of 1.).
 
     Returns
     -------
     An array of 1 draw of uncalibration factors for the detector module.
     """
     uncalib_consts = stats.beta.ppf(copula_assembly.flatten(), a=alpha, b=beta).reshape(copula_assembly.shape)
-    uncalib_consts = np.expand_dims(uncalib_consts,len(copula_assembly.shape)) + 0.5
+    uncalib_consts = scale*(2.*np.expand_dims(uncalib_consts,len(copula_assembly.shape))-1.) + 1.
 
     return uncalib_consts
 
@@ -110,7 +113,7 @@ def draw_noise(copula_assembly, alpha, beta, scale):
     An array of 1 draw of noise for the detector module.
     """
     noise = stats.beta.ppf(copula_assembly.flatten(), a=alpha, b=beta).reshape(copula_assembly.shape)
-    noise = scale * (noise - np.mean(noise))
+    noise = scale*(2.*noise - 1.)
     
     return np.expand_dims(noise, len(noise.shape))
 
@@ -210,7 +213,7 @@ if __name__ == '__main__':
     # beta
     # noise scale
     # output location
-    shortargs = 's:m:c:x:a:b:S:o:h'
+    shortargs = 's:m:c:x:a:b:S:C:o:h'
     longargs = ['seed=', 
         'model=',
         'copula=',
@@ -218,6 +221,7 @@ if __name__ == '__main__':
         'alpha=',
         'beta=',
         'noise-scale=',
+        'calib-scale=',
         'output=',
         'help']
     opts, args = getopt.getopt(sys.argv[1:], shortargs, longargs)
@@ -236,6 +240,8 @@ if __name__ == '__main__':
             beta = float(a)
         elif o in ('-S','--noise-scale'):
             noise_scale = float(a)
+        elif o in ('-C','--calib-scale'):
+            calib_scale = float(a)
         elif o in ('-o','--output'):
             output = a
         elif o in ('-h','--help'):
@@ -269,7 +275,7 @@ if __name__ == '__main__':
     #
     # select a single miscalibration draw for the complete module
     assembly_calibs = select_random_panel_set(calib_copula, X.shape[1:-1])
-    uncalib_consts = draw_uncalibration(assembly_calibs, alpha, beta)
+    uncalib_consts = draw_uncalibration(assembly_calibs, alpha, beta, calib_scale)
 
 
     for l in range (int(len(y)/batch_size)):

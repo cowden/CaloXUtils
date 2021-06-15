@@ -11,6 +11,22 @@ import scipy.stats as stats
 import pdb
 import getopt
 
+#####################################################
+# Configure some stuff for Tensorflow
+config = tf.compat.v1.ConfigProto()
+config.gpu_options.allow_growth = True
+tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
+
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try: 
+      tf.config.experimental.set_virtual_device_configuration(gpus[0],
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
+      logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+      print(len(gpus), "Physical GPUs", len(logical_gpus), "Logical GPUs")
+    except RuntimeError as e:
+      print(e)
+#####################################################
 
 np.random.seed(42)
 
@@ -19,6 +35,7 @@ alpha = 2
 beta = 2
 calib_scale = 0.3
 noise_scale = 1.
+bias = 0.
 
 #
 # select a random set of panels to cover the detector module
@@ -133,7 +150,7 @@ def get_batch_to_score(X, batch, batch_size):
     """
     return X[batch*batch_size:(batch+1)*batch_size]
 
-def score_batch(data_dict, model, X, y, batch, batch_size, calib_copula, alpha, beta, noise_scale):
+def score_batch(data_dict, model, X, y, batch, batch_size, calib_copula, alpha, beta, noise_scale, bias):
     """
     Score a batch of data.
 
@@ -156,17 +173,16 @@ def score_batch(data_dict, model, X, y, batch, batch_size, calib_copula, alpha, 
         assembly_calibs = select_random_panel_set(calib_copula, X.shape[1:-1])
         noise[i] = draw_noise(assembly_calibs, alpha, beta, noise_scale)
     
-
-    X_batch = get_batch_to_score(X, l, batch_size)
+    X_batch = get_batch_to_score(X, batch, batch_size)
     Esum_batch = X_batch.sum(axis=(1,2,3)).ravel()
 
     X_uncalib_batch = np.zeros(X_batch.shape)
     for i in range(batch_size):
-        X_uncalib_batch[i] = X_batch[i] * uncalib_consts + noise[i]
+        X_uncalib_batch[i] = X_batch[i] * uncalib_consts + noise[i] + bias
         #X_uncalib_batch[i] = noise[i]
 
     # apply zero suppression
-    #X_uncalib_batch[np.nonzero(X_uncalib_batch < 0.6)] = 0.
+    X_uncalib_batch[np.nonzero(X_uncalib_batch < 0.6)] = 0.
 
     Esum_uncalib_batch = X_uncalib_batch.sum(axis=(1,2,3)).ravel()
 
@@ -190,6 +206,7 @@ def print_help():
     \t-a, --alpha\tnoise/calibration distribution parameter
     \t-b, --beta\tnoise/calibration distribution parameter
     \t-S, --noise-scale\tnoise distribution scale
+    \t-B, --bias\tbias offset
     \t-o, --output\toutput file name
     \t-h, --help\tprint this help message."""
     print(msg)
@@ -213,7 +230,7 @@ if __name__ == '__main__':
     # beta
     # noise scale
     # output location
-    shortargs = 's:m:c:x:a:b:S:C:o:h'
+    shortargs = 's:m:c:x:a:b:S:C:o:B:h'
     longargs = ['seed=', 
         'model=',
         'copula=',
@@ -223,11 +240,12 @@ if __name__ == '__main__':
         'noise-scale=',
         'calib-scale=',
         'output=',
+        'bias=',
         'help']
     opts, args = getopt.getopt(sys.argv[1:], shortargs, longargs)
     for o, a in opts:
         if o in ('-s', '--seed'):
-            np.random.seed(a)
+            np.random.seed(int(a))
         elif o in ('-m', '--model'):
             mod_file = a
         elif o in ('-c','--copula'):
@@ -244,6 +262,8 @@ if __name__ == '__main__':
             calib_scale = float(a)
         elif o in ('-o','--output'):
             output = a
+        elif o in ('-B','--bias'):
+            bias = float(a)
         elif o in ('-h','--help'):
             print_help()
             sys.exit(0)
@@ -279,7 +299,7 @@ if __name__ == '__main__':
 
 
     for l in range (int(len(y)/batch_size)):
-        score_batch(data_dict, model, X, y, l, batch_size, calib_copula, alpha, beta, noise_scale)
+        score_batch(data_dict, model, X, y, l, batch_size, calib_copula, alpha, beta, noise_scale, bias)
 
 
     df = pd.DataFrame(data_dict)

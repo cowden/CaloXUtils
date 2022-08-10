@@ -219,6 +219,7 @@ if __name__ == '__main__':
     cop_file = 'out.h5'
     dfile = 'sample.npz'
     output = 'cnn_uncalib_output.pkl'
+    batch_size = 5
 
     #
     # parse command line options
@@ -230,7 +231,7 @@ if __name__ == '__main__':
     # beta
     # noise scale
     # output location
-    shortargs = 's:m:c:x:a:b:S:C:o:B:h'
+    shortargs = 's:m:c:x:a:b:S:C:o:B:hT:'
     longargs = ['seed=', 
         'model=',
         'copula=',
@@ -241,7 +242,8 @@ if __name__ == '__main__':
         'calib-scale=',
         'output=',
         'bias=',
-        'help']
+        'help',
+        'batch-size=',]
     opts, args = getopt.getopt(sys.argv[1:], shortargs, longargs)
     for o, a in opts:
         if o in ('-s', '--seed'):
@@ -267,6 +269,8 @@ if __name__ == '__main__':
         elif o in ('-h','--help'):
             print_help()
             sys.exit(0)
+        elif o in ('-T','--batch-size'):
+            batch_size = int(a)
         else:
             print('{} is not a valid option'.format(o))
             print_help()
@@ -284,7 +288,6 @@ if __name__ == '__main__':
     data = np.load(dfile,allow_pickle=True)
     X=data['input']
     y=data['egen']
-    batch_size = 5
 
     data_dict = {'eGen': [],
             'calib_pred': [],

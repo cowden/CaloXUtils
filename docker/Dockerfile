@@ -15,6 +15,16 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
     /bin/sh /opt/loaders/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda && \
     /opt/miniconda/bin/conda init
 
+##############################
+# Development Environment
+#############################
+RUN git clone https://github.com/VundleVim/Vundle.vim.git /root/.vim/bundle/Vundle.vim && \
+    vim +PluginInstall +qall && \
+    git clone https://github.com/cowden/CowTools /root/CowTools && \
+    cp /root/CowTools/config/vimrc /root/.vimrc && \
+    git config --global user.name "USERNAME" && \
+    git config --global user.email "USEREMAIL"
+
 # install ROOT
 RUN yum install -y epel-release && \
     yum install -y root

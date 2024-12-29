@@ -32,10 +32,24 @@ RUN git clone https://github.com/VundleVim/Vundle.vim.git /root/.vim/bundle/Vund
 # install ROOT
 RUN yum install -y epel-release && \
     dnf config-manager --set-enabled powertools && \
-    yum install -y root && \
-    yum install -y hdf5-mpich hdf5-mpich-devel && \
-    ln -s /usr/lib64/gfortran/modules/mpich/hdf5.mod /usr/lib64/gfortran/modules/hdf5.mod && \
-    ln -s /usr/include/mpich-x86_64/hdf5.h /usr/include/hdf5.h
+    yum install -y root
+    #yum install -y hdf5-mpich hdf5-mpich-devel && \
+    #ln -s /usr/lib64/gfortran/modules/mpich/hdf5.mod /usr/lib64/gfortran/modules/hdf5.mod && \
+    #ln -s /usr/include/mpich-x86_64/hdf5.h /usr/include/hdf5.h
+
+##############################
+# BUILD HDF5
+##############################
+RUN wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.5/hdf5-1.14.5.tar.gz && \
+    mkdir -p /opt/hdf5 && \
+    tar -xzf hdf5-1.14.5.tar.gz -C /opt/hdf5 && \
+    cd /opt/hdf5/hdf5-1.14.5/ && \
+    mkdir build && \
+    cd build && \
+    cmake ../ && \
+    make && \
+    make install
+
 
 ############################
 # GEANT4
@@ -67,4 +81,5 @@ RUN cd /opt/geant4/build/ && \
     make  -j`nproc` && \
     make install
 
-RUN echo -e "\n\nsource /opt/geant4/install/share/Geant4/geant4make/geant4make.sh" >> ${HOME}/.bashrc 
+RUN echo -e "\n\nsource /opt/geant4/install/share/Geant4/geant4make/geant4make.sh" >> ${HOME}/.bashrc  && \
+    echo -e "\n\nexport PATH=${PATH}:/usr/local/HDF_Group/HDF5/1.14.5/bin" >> ${HOME}/.bashrc

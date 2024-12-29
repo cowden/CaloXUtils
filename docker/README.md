@@ -1,13 +1,9 @@
 
 # CaloX Docker Images
 
-```
-sed -i "s/USERNAME/Your Name/" Dockerfile
-sed -i "s/USEREMAIL/your.email@serv.domain/" Dockerfile
-```
 
 ```
-docker build -t calox .
+docker build -t calox --build-arg git_user_name=<git user name> --build-arg git_user_email=<email> .
 ```
 
 ```
@@ -17,4 +13,13 @@ cd /work
 cmake /sim -B g4_sim_build
 ...
 ```
+
+
+## CaloX HGcal image
+
+```
+docker build -t calox-hgcal -f CaloX_G4.Dockerfile
+```
+The HGcal image builds the CaloX HGcal G4 simulation found in the ``dev`` branch of the `CaloX_G4 <https://github.com/cowden/CaloX_G4>`_
+git repository.
 

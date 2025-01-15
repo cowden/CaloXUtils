@@ -16,8 +16,9 @@ RUN yum update -y libmodulemd && \
 # install python - anaconda
 RUN mkdir -p /opt/loaders
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -P /opt/loaders && \ 
-    /bin/sh /opt/loaders/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda && \
-    /opt/miniconda/bin/conda init
+    /bin/bash /opt/loaders/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/miniconda && \
+    /opt/miniconda/bin/conda init bash && \
+    /opt/miniconda/bin/conda install -n base -y python=3.11 pip
 
 ##############################
 # Development Environment
